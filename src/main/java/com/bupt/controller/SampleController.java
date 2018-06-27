@@ -2,7 +2,7 @@ package com.bupt.controller;
 
 import com.bupt.domain.User;
 import com.bupt.redis.RedisService;
-import com.bupt.result.CodeMsg;
+import com.bupt.redis.UserKey;
 import com.bupt.result.Result;
 import com.bupt.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,8 +43,25 @@ public class SampleController {
 
     @RequestMapping("redis/get")
     @ResponseBody
-    public Result<Long> redisGet(){
-        Long v1 = redisService.get("key1",Long.class);
-        return Result.success(v1);
+    public Result<User> redisGet(){
+        User user = redisService.get(UserKey.getById,""+1,User.class);
+        return Result.success(user);
+    }
+
+    @RequestMapping("redis/set")
+    @ResponseBody
+    public Result<User> redisSet(){
+        /**
+         * 因为User类没有下边的这么一个构造函数，所以不能直接进行创建对象，需要使用set方法
+         * User user = new User(1,"1111");
+         * */
+        User user = new User();
+        user.setId(1);
+        user.setName("1111");
+        Boolean ret= redisService.set(UserKey.getById,""+1,user);
+        User user1 = redisService.get(UserKey.getById,""+1,User.class);
+
+
+        return Result.success(user1);
     }
 }
