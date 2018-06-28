@@ -2,7 +2,6 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/../05 Java秒杀系统方案优化 高性能高并发实战/s2gciy/miaosha_2/src/main/main.iml" filepath="$PROJECT_DIR$/../05 Java秒杀系统方案优化 高性能高并发实战/s2gciy/miaosha_2/src/main/main.iml" />
       <module fileurl="file://$PROJECT_DIR$/miaosha.iml" filepath="$PROJECT_DIR$/miaosha.iml" />
     </modules>
   </component>

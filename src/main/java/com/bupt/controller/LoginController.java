@@ -1,7 +1,6 @@
 package com.bupt.controller;
 
 import com.bupt.redis.RedisService;
-import com.bupt.result.CodeMsg;
 import com.bupt.result.Result;
 import com.bupt.service.MiaoShaUserService;
 import com.bupt.vo.LoginVo;
@@ -13,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import javax.servlet.http.HttpServletResponse;
 import javax.validation.Valid;
 
 @Controller
@@ -28,6 +28,7 @@ public class LoginController {
 
     @RequestMapping("/to_login")
     public String toLogin(Model model){
+
         return "login";
     }
 
@@ -38,11 +39,12 @@ public class LoginController {
      * 然后在相应的属性上边加上合适的校验项即可
      * 这样下边的参数校验就不需要
      *
-     * 经过改造后的代码就是业务中出现异常都向外抛出，在代码中不必出现对异常处理的代码
+     * 经过改造后的代码就是业务中出现异常都向外抛出，在业务代码中不必出现对异常处理的代码
      * 最后的结果直接返回true或者false
      * */
-    public Result<Boolean> doLogin(@Valid LoginVo loginVo){
+    public Result<Boolean> doLogin(HttpServletResponse response,@Valid LoginVo loginVo){
         log.info(loginVo.toString());
+
         //参数校验
         /*String passInput = loginVo.getPassword();
         String mobile = loginVo.getMobile();
@@ -57,7 +59,7 @@ public class LoginController {
             return Result.error(CodeMsg.MOBILE_ERROR);
         }*/
         //参数检验成功之后进行登录
-        miaoShaUserService.login(loginVo);
+        miaoShaUserService.login(response,loginVo);
         //因为现在所有的异常都进行抛出单独处理，所以下边的判断已经没用
         /*//对结果中的代码进行判断
         if (cm.getCode() == 0){

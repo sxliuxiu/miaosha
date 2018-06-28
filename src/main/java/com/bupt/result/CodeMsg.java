@@ -26,27 +26,17 @@ public class CodeMsg {
 		this.code = code;
 		this.msg = msg;
 	}
-	
-	public int getCode() {
 
-		return code;
-	}
-	public String getMsg() {
-
-		return msg;
-	}
-
-	public CodeMsg fillArgs(Object...obj){
+	public CodeMsg fillArgs(Object...args){
 		int code = this.code;
-		String message = String.format(this.msg,obj);
+		String message = String.format(this.msg,args);
 		return new CodeMsg(code,message);
 	}
 
-	@Override
-	public String toString() {
-		return "CodeMsg{" +
-				"code=" + code +
-				", msg='" + msg + '\'' +
-				'}';
+	public int getCode() {
+		return code;
+	}
+	public String getMsg() {
+		return msg;
 	}
 }

@@ -11,10 +11,6 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface MiaoShaUserDao {
 
-    /**
-     * @param id
-     * @return
-     */
-    @Select("select * from miaosha_user where id = #{id}")
+    @Select("select * from miaosha_user where id=#{id}")
     public MiaoShaUser getById(@Param("id") long id);
 }

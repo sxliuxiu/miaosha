@@ -1,6 +1,7 @@
 package com.bupt.service;
 
 import com.bupt.dao.UserDao;
+import com.bupt.domain.MiaoShaUser;
 import com.bupt.domain.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,4 +26,6 @@ public class UserService {
 
         return true;
     }
+
+
 }

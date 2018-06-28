@@ -1,5 +1,6 @@
 package com.bupt.Util;
 
+
 import org.apache.commons.codec.digest.DigestUtils;
 
 public class MD5Util {
@@ -31,6 +32,7 @@ public class MD5Util {
         return dbPass;
     }
     public static void main(String[] args){
-       System.out.println(inputPassFormPass("123456"));
+       System.out.println(inputPassToDBPass("123456",salt));
+
     }
 }

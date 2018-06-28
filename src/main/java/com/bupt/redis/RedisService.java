@@ -14,6 +14,9 @@ public class RedisService {
 
     @Autowired
     RedisConfig redisConfig;
+    /**
+     * 将从redis中取出来的string转换成相应的Bean对象，调用stringToBean方法
+     * */
     public <T>T get(KeyPrefix prefix, String key, Class<T> clazz){
         Jedis jedis = null;
         //因为这是一个连接池，所以需要进行释放
@@ -31,7 +34,7 @@ public class RedisService {
     }
 
     /**
-     * 设置对象
+     * 设置对象。将传进来的bean转换成相应的string存入到redis中
      * */
     public <T> boolean set(KeyPrefix prefix,String key,T value){
         Jedis jedis = null;
