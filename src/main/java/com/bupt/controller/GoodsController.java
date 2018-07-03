@@ -1,25 +1,27 @@
 package com.bupt.controller;
 
-import com.bupt.dao.GoodsDao;
 import com.bupt.domain.MiaoShaUser;
+import com.bupt.redis.GoodsKey;
 import com.bupt.redis.RedisService;
 import com.bupt.service.GoodsService;
 import com.bupt.service.MiaoShaUserService;
 import com.bupt.service.UserService;
 import com.bupt.vo.GoodsVo;
-import com.fasterxml.jackson.databind.annotation.JsonAppend;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.thymeleaf.spring4.context.SpringWebContext;
+import org.thymeleaf.spring4.view.ThymeleafViewResolver;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.ws.Response;
 import java.util.List;
 
 /**
@@ -32,24 +34,117 @@ public class GoodsController {
     private static Logger log = LoggerFactory.getLogger(GoodsController.class);
 
     @Autowired
+    UserService userService;
+    @Autowired
+    MiaoShaUserService miaoShaUserService;
+    @Autowired
+    RedisService redisService;
+
+    @Autowired
     GoodsService goodsService;
 
     @Autowired
-    MiaoShaUserService miaoShaUserService;
+    ThymeleafViewResolver thymeleafViewResolver;
+
+    @Autowired
+    ApplicationContext applicationContext;
 
 
-    @RequestMapping("/to_list")
-    public String toList(HttpServletResponse response,Model model,
-                         @CookieValue(value = MiaoShaUserService.COOKIE_NAME_TOKEN,required = false) String cookieToken,
-                         @RequestParam(value = MiaoShaUserService.COOKIE_NAME_TOKEN,required = false) String paramToken){
-        //如果都是空，直接返回登录页面
+    /*@RequestMapping("/to_list")
+    public String toList(Model model,
+                          @CookieValue(value = MiaoShaUserService.COOKIE_NAME_TOKEN,required = false) String cookieToken,
+                          @RequestParam(value = MiaoShaUserService.COOKIE_NAME_TOKEN,required = false) String paramToken,
+                          HttpServletResponse response){
+        *//**
+         * 没有相应的用户信息，则返回登录界面重新登录
+         * *//*
         if (StringUtils.isEmpty(cookieToken)&&StringUtils.isEmpty(paramToken)){
             return "login";
         }
         String token = StringUtils.isEmpty(paramToken)?cookieToken:paramToken;
+        //获取到用户
         MiaoShaUser user = miaoShaUserService.getByToken(response,token);
         model.addAttribute("user",user);
         return "goods_list";
+    }*/
+    /**
+     *通过使用ArgumentResolver将上边的代码参数中的判断部分转移到了resolver中
+     * 如果以后session中的代码发生了改变，只需要在resolver中进行修改
+     * 业务代码不需要改变
+     * */
+    @RequestMapping(value = "/to_list",produces = "text/html")
+    @ResponseBody
+    public String toList(HttpServletRequest request, HttpServletResponse response,Model model, MiaoShaUser user){
+        model.addAttribute("user",user);
+
+        //查询商品列表
+        List<GoodsVo> goodsList = goodsService.listGoodsVo();
+        model.addAttribute("goodsList",goodsList);
+        //return "goods_list";
+
+        //取页面缓存
+        String html = redisService.get(GoodsKey.getGoodsList,"",String.class);
+        if (!StringUtils.isEmpty(html)){
+            return html;
+        }
+        SpringWebContext ctx = new SpringWebContext(request,response, request.getServletContext(), request.getLocale(), model.asMap(),applicationContext);
+        //手动渲染
+        html = thymeleafViewResolver.getTemplateEngine().process("goods_list",ctx);
+        if (!StringUtils.isEmpty(html)){
+            redisService.set(GoodsKey.getGoodsList,"",html);
+        }
+        return html;
+    }
+
+
+
+
+    //不同的goodsId有不同的展示情况
+    @RequestMapping(value = "/to_detail/{goodsId}",produces = "text/html")
+    @ResponseBody
+    public String toList(HttpServletRequest request,HttpServletResponse response,Model model, MiaoShaUser user,
+                         @PathVariable("goodsId")long goodsId){
+        model.addAttribute("user",user);
+
+        //取页面缓存
+        String html = redisService.get(GoodsKey.getGoodsDetail,""+goodsId,String.class);
+        if (!StringUtils.isEmpty(html)){
+            return html;
+        }
+
+        GoodsVo goods = goodsService.getGoodsVoByGoodsId(goodsId);
+        model.addAttribute("goods",goods);
+
+        //秒杀时间和秒杀状态的确定
+        long startAt = goods.getStartDate().getTime();
+        long endAt = goods.getEndDate().getTime();
+        long now = System.currentTimeMillis();
+
+        int miaoshaStatus = 0;
+        //距离秒杀开始还剩的时间
+        int remainSeconds = 0;
+        if (now < startAt){//秒杀还没开始，倒计时
+            miaoshaStatus = 0;
+            remainSeconds = (int)((startAt-now)/1000);
+        }else if (now > endAt){//秒杀已经结束
+            miaoshaStatus = 2;
+            remainSeconds = -1;
+        }else {//秒杀进行中
+            miaoshaStatus = 1;
+            remainSeconds = 0;
+        }
+
+        model.addAttribute("miaoshaStatus",miaoshaStatus);
+        model.addAttribute("remainSeconds",remainSeconds);
+
+        SpringWebContext ctx = new SpringWebContext(request,response, request.getServletContext(), request.getLocale(), model.asMap(),applicationContext);
+        //手动渲染
+        html = thymeleafViewResolver.getTemplateEngine().process("goods_detail",ctx);
+        if (!StringUtils.isEmpty(html)){
+            redisService.set(GoodsKey.getGoodsDetail,""+goodsId,html);
+        }
+        return html;
+        //return "goods_detail";
     }
 
 }

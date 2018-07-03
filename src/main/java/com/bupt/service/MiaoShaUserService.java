@@ -28,7 +28,6 @@ public class MiaoShaUserService {
     @Autowired
     RedisService redisService;
     public MiaoShaUser getById(long id){
-
         return miaoShaUserDao.getById(id);
     }
 
@@ -80,7 +79,11 @@ public class MiaoShaUserService {
          写到cookie中传递给客户端，客户端在以后的访问中都在cookie中上传这个token，
          服务端拿到这个token后，根据这个token取到session信息。
          */
-        //登陆成功后要生成一个cookie
+        /**
+         * 登陆成功后要生成一个cookie，将token放在这可以避免每次都生成一个token
+         * 对于已经存在的token直接使用老的token就可以
+         */
+
         String token = UUIDUtil.uuid();
         addCookie(response,token,user);
 
@@ -91,7 +94,7 @@ public class MiaoShaUserService {
 
 
         //将用户信息存储到redis中,使用token就可以查到用户信息
-        boolean bl = redisService.set(MiaoShaUserKey.token,token,user);
+        redisService.set(MiaoShaUserKey.token,token,user);
         //将token存到cookie中
         Cookie cookie = new Cookie(COOKIE_NAME_TOKEN,token);
         //设置cookie的存活时间和redis中的存活时间一致
@@ -103,5 +106,4 @@ public class MiaoShaUserService {
          */
         response.addCookie(cookie);
     }
-
 }

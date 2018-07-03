@@ -23,6 +23,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(value = Exception.class)
     //里边的参数自己进行定义
     public Result<String> exceptionHandler(HttpServletRequest request,Exception e){
+        e.printStackTrace();
         if (e instanceof GlobalException){//对业务系统中抛出来的异常进行处理
             GlobalException ex = (GlobalException)e;
             return Result.error(ex.getCm());
