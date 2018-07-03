@@ -15,11 +15,6 @@
     },
     {
       "sourceType": "com.bupt.redis.RedisConfig",
-      "name": "redis.password",
-      "type": "java.lang.String"
-    },
-    {
-      "sourceType": "com.bupt.redis.RedisConfig",
       "defaultValue": 0,
       "name": "redis.pool-max-idle",
       "type": "java.lang.Integer"

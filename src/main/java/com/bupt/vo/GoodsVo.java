@@ -10,6 +10,7 @@ import java.util.Date;
  * 为了方便秒杀订单的描述，创造一个class将这两个表结合起来
  * */
 public class GoodsVo extends Goods{
+    private Double miaoshaPrice;
     private Integer stockCount;
     private Date startDate;
     private Date endDate;
@@ -36,5 +37,13 @@ public class GoodsVo extends Goods{
 
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
+    }
+
+    public Double getMiaoshaPrice() {
+        return miaoshaPrice;
+    }
+
+    public void setMiaoshaPrice(Double miaoshaPrice) {
+        this.miaoshaPrice = miaoshaPrice;
     }
 }

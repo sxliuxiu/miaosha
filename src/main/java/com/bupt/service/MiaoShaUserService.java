@@ -91,7 +91,7 @@ public class MiaoShaUserService {
 
 
         //将用户信息存储到redis中,使用token就可以查到用户信息
-        redisService.set(MiaoShaUserKey.token,token,user);
+        boolean bl = redisService.set(MiaoShaUserKey.token,token,user);
         //将token存到cookie中
         Cookie cookie = new Cookie(COOKIE_NAME_TOKEN,token);
         //设置cookie的存活时间和redis中的存活时间一致
@@ -103,4 +103,5 @@ public class MiaoShaUserService {
          */
         response.addCookie(cookie);
     }
+
 }
