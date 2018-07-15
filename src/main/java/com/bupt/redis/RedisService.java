@@ -1,11 +1,17 @@
 package com.bupt.redis;
 
-import com.alibaba.fastjson.JSON;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.alibaba.fastjson.JSON;
+
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
-
+import redis.clients.jedis.ScanParams;
+import redis.clients.jedis.ScanResult;
 
 @Service
 public class RedisService {
@@ -13,21 +19,18 @@ public class RedisService {
     @Autowired
     JedisPool jedisPool;
 
-    @Autowired
-    RedisConfig redisConfig;
     /**
+     * 获取当个对象./**
      * 将从redis中取出来的string转换成相应的Bean对象，调用stringToBean方法
      * */
-    public <T>T get(KeyPrefix prefix, String key, Class<T> clazz){
+    public <T> T get(KeyPrefix prefix, String key,  Class<T> clazz) {
         Jedis jedis = null;
-        //因为这是一个连接池，所以需要进行释放
         try {
-            jedis = jedisPool.getResource();
+            jedis =  jedisPool.getResource();
             //生成真正的key
-            String realKey = prefix.getPrefix()+key;
-            String str = jedis.get(realKey);
-            //将获取出来的string转换成一个bean
-            T t = stringToBean(str,clazz);
+            String realKey  = prefix.getPrefix() + key;
+            String  str = jedis.get(realKey);
+            T t =  stringToBean(str, clazz);
             return t;
         }finally {
             returnToPool(jedis);
@@ -35,25 +38,23 @@ public class RedisService {
     }
 
     /**
-     * 设置对象。将传进来的bean转换成相应的string存入到redis中
+     * 设置对象.将传进来的bean转换成相应的string存入到redis中
      * */
-    public <T> boolean set(KeyPrefix prefix,String key,T value){
+    public <T> boolean set(KeyPrefix prefix, String key,  T value) {
         Jedis jedis = null;
-        //因为这是一个连接池，所以需要进行释放
         try {
-            jedis = jedisPool.getResource();
+            jedis =  jedisPool.getResource();
             String str = beanToString(value);
-            if (str == null||str.length()<0){
+            if(str == null || str.length() <= 0) {
                 return false;
             }
-            String realKey = prefix.getPrefix()+key;
-            //获取该键的有效期
-            int seconds = prefix.expireSeconds();
-            //如果是永不过期
-            if(seconds <= 0){
-                jedis.set(realKey,str);
+            //生成真正的key
+            String realKey  = prefix.getPrefix() + key;
+            int seconds =  prefix.expireSeconds();
+            if(seconds <= 0) {
+                jedis.set(realKey, str);
             }else {
-                jedis.setex(realKey,seconds,str);
+                jedis.setex(realKey, seconds, str);
             }
             return true;
         }finally {
@@ -64,63 +65,124 @@ public class RedisService {
     /**
      * 判断key是否存在
      * */
-    public <T> boolean exists(KeyPrefix prefix,String key){
+    public <T> boolean exists(KeyPrefix prefix, String key) {
         Jedis jedis = null;
-        //因为这是一个连接池，所以需要进行释放
         try {
-            jedis = jedisPool.getResource();
+            jedis =  jedisPool.getResource();
             //生成真正的key
-            String realKey = prefix.getPrefix()+key;
-            return jedis.exists(realKey);
+            String realKey  = prefix.getPrefix() + key;
+            return  jedis.exists(realKey);
         }finally {
             returnToPool(jedis);
         }
     }
 
     /**
-     *增加值
+     * 删除
      * */
-    public <T> Long incr(KeyPrefix prefix,String key){
+    public boolean del(KeyPrefix prefix, String key) {
         Jedis jedis = null;
-        //因为这是一个连接池，所以需要进行释放
         try {
-            jedis = jedisPool.getResource();
+            jedis =  jedisPool.getResource();
             //生成真正的key
-            String realKey = prefix.getPrefix()+key;
-            return jedis.incr(realKey);
+            String realKey  = prefix.getPrefix() + key;
+            long ret =  jedis.del(realKey);
+            return ret > 0;
         }finally {
             returnToPool(jedis);
         }
     }
 
     /**
-     * 减少数值
+     * 增加值
      * */
-    public <T> Long dec(KeyPrefix prefix,String key){
+    public <T> Long incr(KeyPrefix prefix, String key) {
         Jedis jedis = null;
-        //因为这是一个连接池，所以需要进行释放
         try {
-            jedis = jedisPool.getResource();
+            jedis =  jedisPool.getResource();
             //生成真正的key
-            String realKey = prefix.getPrefix()+key;
-            return jedis.decr(realKey);
+            String realKey  = prefix.getPrefix() + key;
+            return  jedis.incr(realKey);
         }finally {
             returnToPool(jedis);
+        }
+    }
+
+    /**
+     * 减少值
+     * */
+    public <T> Long dec(KeyPrefix prefix, String key) {
+        Jedis jedis = null;
+        try {
+            jedis =  jedisPool.getResource();
+            //生成真正的key
+            String realKey  = prefix.getPrefix() + key;
+            return  jedis.decr(realKey);
+        }finally {
+            returnToPool(jedis);
+        }
+    }
+
+    public boolean delete(KeyPrefix prefix) {
+        if(prefix == null) {
+            return false;
+        }
+        List<String> keys = scanKeys(prefix.getPrefix());
+        if(keys==null || keys.size() <= 0) {
+            return true;
+        }
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            jedis.del(keys.toArray(new String[0]));
+            return true;
+        } catch (final Exception e) {
+            e.printStackTrace();
+            return false;
+        } finally {
+            if(jedis != null) {
+                jedis.close();
+            }
+        }
+    }
+
+    public List<String> scanKeys(String key) {
+        Jedis jedis = null;
+        try {
+            jedis = jedisPool.getResource();
+            List<String> keys = new ArrayList<String>();
+            String cursor = "0";
+            ScanParams sp = new ScanParams();
+            sp.match("*"+key+"*");
+            sp.count(100);
+            do{
+                ScanResult<String> ret = jedis.scan(cursor, sp);
+                List<String> result = ret.getResult();
+                if(result!=null && result.size() > 0){
+                    keys.addAll(result);
+                }
+                //再处理cursor
+                cursor = ret.getStringCursor();
+            }while(!cursor.equals("0"));
+            return keys;
+        } finally {
+            if (jedis != null) {
+                jedis.close();
+            }
         }
     }
 
     //将传入的参数bean转换成string
-    private <T> String beanToString(T value) {
-        if (value == null){
+    public static <T> String beanToString(T value) {
+        if(value == null) {
             return null;
         }
-        //判断传入的参数类型,简单的举几个例子
         Class<?> clazz = value.getClass();
-        if(clazz == int.class || clazz == Integer.class){
+        if(clazz == int.class || clazz == Integer.class) {
             return ""+value;
-        }else if(clazz == String.class){
+        }else if(clazz == String.class) {
             return (String)value;
-        }else if(clazz == long.class||clazz == Long.class){
+        }else if(clazz == long.class || clazz == Long.class) {
             return ""+value;
         }else {
             return JSON.toJSONString(value);
@@ -128,29 +190,28 @@ public class RedisService {
     }
 
     /*
-    * 使用fastJson将bean对象转换成字符串存入redis中
-    * 现在要将从redis中取出来的string转换成bean
-    * */
-    private <T> T stringToBean(String str,Class<T> clazz) {
-        //必不可少的参数校验
-        if (str == null||str.length() <= 0||clazz == null){
+     * 使用fastJson将bean对象转换成字符串存入redis中
+     * 现在要将从redis中取出来的string转换成bean
+     * */
+    public static <T> T stringToBean(String str, Class<T> clazz) {
+        if(str == null || str.length() <= 0 || clazz == null) {
             return null;
         }
-        if(clazz == int.class || clazz == Integer.class){
+        if(clazz == int.class || clazz == Integer.class) {
             return (T)Integer.valueOf(str);
-        }else if(clazz == String.class){
-            return (T)String.valueOf(str);
-        }else if(clazz == long.class||clazz == Long.class){
-            return (T)Long.valueOf(str);
+        }else if(clazz == String.class) {
+            return (T)str;
+        }else if(clazz == long.class || clazz == Long.class) {
+            return  (T)Long.valueOf(str);
         }else {
-            return JSON.toJavaObject(JSON.parseObject(str),clazz);
+            return JSON.toJavaObject(JSON.parseObject(str), clazz);
         }
     }
 
     private void returnToPool(Jedis jedis) {
-        if (jedis!=null){
+        if(jedis != null) {
             jedis.close();
         }
     }
-
 }
+

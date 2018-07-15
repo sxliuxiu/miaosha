@@ -1,6 +1,7 @@
 package com.bupt.controller;
 
 import com.bupt.domain.User;
+import com.bupt.rabbitmq.MQSender;
 import com.bupt.redis.RedisService;
 import com.bupt.redis.UserKey;
 import com.bupt.result.Result;
@@ -20,6 +21,8 @@ public class SampleController {
     @Autowired
     RedisService redisService;
 
+    @Autowired
+    MQSender mqSender;
     @RequestMapping("/thymeleaf")
     public String thymeleaf(Model model){
         model.addAttribute("name","Joshua");
@@ -63,5 +66,11 @@ public class SampleController {
 
 
         return Result.success(user1);
+    }
+    @RequestMapping("mq")
+    @ResponseBody
+    public Result<String> mq(){
+        mqSender.send("hello bupt");
+        return Result.success("Hello bupt");
     }
 }

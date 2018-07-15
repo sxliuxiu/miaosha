@@ -22,10 +22,10 @@ public class GoodsService {
     }
 
     //根据查出来的物品对秒杀物品进行减库存
-    public void reduceStock(GoodsVo goods) {
+    public boolean reduceStock(GoodsVo goods) {
         MiaoShaGoods good = new MiaoShaGoods();
         good.setGoodsId(goods.getId());
-        good.setStockCount(goods.getStockCount()-1);
-        goodsDao.reduceStock(good);
+        int ret = goodsDao.reduceStock(good);
+        return ret > 0;
     }
 }

@@ -11,8 +11,8 @@ public class MiaoShaUserKey extends BasePrefix {
     }
     public static MiaoShaUserKey token = new MiaoShaUserKey(TOKEN_EXPIRE,"tk");
 
-    public static void main(String[] args){
-       System.out.println(MiaoShaUserKey.token.expireSeconds());
+    //希望对象缓存是永久有效的
+    public static MiaoShaUserKey getById = new MiaoShaUserKey(0,"id");
 
-    }
+
 }

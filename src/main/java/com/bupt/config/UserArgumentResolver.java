@@ -1,8 +1,8 @@
 package com.bupt.config;
 
+import com.bupt.acces.UserContext;
 import com.bupt.domain.MiaoShaUser;
 import com.bupt.service.MiaoShaUserService;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Service;
@@ -13,7 +13,6 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 /**
  * 实现相应的UserArgumentResolver
@@ -40,7 +39,7 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver{
      * */
     @Override
     public Object resolveArgument(MethodParameter methodParameter, ModelAndViewContainer modelAndViewContainer, NativeWebRequest nativeWebRequest, WebDataBinderFactory webDataBinderFactory) throws Exception {
-        HttpServletRequest request = nativeWebRequest.getNativeRequest(HttpServletRequest.class);
+       /* HttpServletRequest request = nativeWebRequest.getNativeRequest(HttpServletRequest.class);
         HttpServletResponse response = nativeWebRequest.getNativeResponse(HttpServletResponse.class);
 
         String paramToken = request.getParameter(MiaoShaUserService.COOKIE_NAME_TOKEN);
@@ -50,7 +49,14 @@ public class UserArgumentResolver implements HandlerMethodArgumentResolver{
         }
         String token = StringUtils.isEmpty(paramToken)?cookieToken:paramToken;
 
-        return miaoShaUserService.getByToken(response,token);
+        return miaoShaUserService.getByToken(response,token);*/
+        /**
+         * 因为现在将当前用户存在了ThreadLocal中，
+         * 所以可以直接从ThreadLocal中获取当前用户
+         * 因为前边的拦截器先执行，而这个参数解析后执行
+         * 所以可以这样进行操作从后边的参数解析中获取用户
+         */
+        return UserContext.getUser();
     }
     /**
      * 因为需要对cookie中的值进行判断，所以单独写一个方法进行处理
